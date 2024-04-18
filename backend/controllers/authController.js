@@ -15,11 +15,29 @@ const DICTIONARY_URL = 'https://raw.githubusercontent.com/dwyl/english-words/mas
 
 
 exports.signup = async (req, res) => {
-    const { name, email, password } = req.body;
-
     // Check if all fields are provided
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !birthdate || !age) {
         return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate birthdate format (DD/MM/YYYY)
+    const birthdateRegex = /^(0[1-9]|[1-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/;
+    if (!birthdate.match(birthdateRegex)) {
+        return res.status(400).json({ error: 'Invalid birthdate format. Use DD/MM/YYYY' });
+    }
+
+    // Calculate age from birthdate
+    const [day, month, year] = birthdate.split('/');
+    const userAge = calculateAge(new Date(year, month - 1, day));
+
+    // Validate age
+    if (userAge < 12 || userAge > 100) {
+        return res.status(400).json({ error: 'Age must be between 12 and 100 years old' });
     }
 
     // Check if password meets minimum length requirement
@@ -185,4 +203,20 @@ exports.verify2FA = (req, res) => {
   
     // Password hasn't expired, proceed to the next middleware
     next();
+  };
+
+  function calculateAge(birthDate) {
+    const currentDate = new Date();
+    let age = currentDate.getFullYear() - birthDate.getFullYear();
+    const monthDiff = currentDate.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  const isValidEmail = (email) => {
+    // Regular expression for validating email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
