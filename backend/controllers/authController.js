@@ -1,4 +1,5 @@
 const speakeasy = require('speakeasy');
+const axios = require('axios');
 
 // Dummy database to store secret keys (for demonstration purposes)
 const secretKeys = new Map();
@@ -9,7 +10,11 @@ const MAX_ATTEMPTS = 10;
 // Password expiration period in days (90+ days)
 const PASSWORD_EXPIRATION_PERIOD = 90;
 
-exports.signup = (req, res) => {
+// URL of the dictionary
+const DICTIONARY_URL = 'https://raw.githubusercontent.com/dwyl/english-words/master/words_dictionary.json';
+
+
+exports.signup = async (req, res) => {
     const { name, email, password } = req.body;
 
     // Check if all fields are provided
@@ -22,9 +27,24 @@ exports.signup = (req, res) => {
         return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
 
-    // Here you can implement the logic to store the user in your database
-    // For demonstration purposes, I'm just sending a success message
-    res.send('Signup successful!');
+    // Fetch the dictionary
+    try {
+        const response = await axios.get(DICTIONARY_URL);
+        const dictionary = response.data;
+
+        // Check if the password contains dictionary words with combinations
+        const words = Object.keys(dictionary);
+        if (words.some(word => newPassword.includes(word))) {
+            return res.status(400).json({ error: 'Password contains dictionary words with combinations' });
+        }
+
+        // Here you can implement the logic to store the user in your database
+        // For demonstration purposes, I'm just sending a success message
+        res.send('Signup successful!');
+    } catch (error) {
+        console.error('Error fetching dictionary:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
   
 exports.signin = (req, res) => {
@@ -95,7 +115,7 @@ exports.verify2FA = (req, res) => {
     }
   };
 
-  exports.changePassword = (req, res) => {
+  exports.changePassword = async (req, res) => {
     const { userId, newPassword } = req.body;
   
     // Get user data from the database
@@ -110,14 +130,31 @@ exports.verify2FA = (req, res) => {
     if (newPassword.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
-  
-    // Update the last password change date for the user
-    userData.lastPasswordChange = new Date();
-  
-    // Update the user data in the database
-    usersData.set(userId, userData);
-  
-    res.json({ success: true, message: 'Password changed successfully' });
+
+    // Fetch the dictionary
+    try {
+        const response = await axios.get(DICTIONARY_URL);
+        const dictionary = response.data;
+
+        // Check if the password contains dictionary words with combinations
+        const words = Object.keys(dictionary);
+        if (words.some(word => newPassword.includes(word))) {
+        return res.status(400).json({ error: 'Password contains dictionary words with combinations' });
+        }
+
+        // Update the last password change date for the user
+        let userData = usersData.get(userId);
+        if (!userData) {
+        userData = {};
+        }
+        userData.lastPasswordChange = new Date();
+        usersData.set(userId, userData);
+
+        res.json({ success: true, message: 'Password changed successfully' });
+    } catch (error) {
+        console.error('Error fetching dictionary:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
   };
   
   exports.checkPasswordExpiration = (req, res, next) => {
