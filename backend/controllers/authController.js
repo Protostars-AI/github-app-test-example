@@ -6,6 +6,9 @@ const secretKeys = new Map();
 // Maximum number of allowed password attempts
 const MAX_ATTEMPTS = 10;
 
+// Password expiration period in days (90+ days)
+const PASSWORD_EXPIRATION_PERIOD = 90;
+
 exports.signup = (req, res) => {
     const { name, email, password } = req.body;
 
