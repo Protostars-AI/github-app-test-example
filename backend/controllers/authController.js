@@ -1,6 +1,8 @@
 const speakeasy = require('speakeasy');
 const axios = require('axios');
 
+import { isValidEmail } from '../utils/isValidEmail';
+
 // Dummy database to store secret keys (for demonstration purposes)
 const secretKeys = new Map();
 
@@ -23,6 +25,11 @@ exports.signup = async (req, res) => {
     // Validate email format
     if (!isValidEmail(email)) {
         return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    if (!name.match(nameRegex)) {
+      return res.status(400).json({ error: 'Invalid name format. Only letters and white spaces are allowed' });
     }
 
     // Validate birthdate format (DD/MM/YYYY)
@@ -215,8 +222,3 @@ exports.verify2FA = (req, res) => {
     return age;
   }
 
-  const isValidEmail = (email) => {
-    // Regular expression for validating email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
